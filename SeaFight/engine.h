@@ -9,6 +9,7 @@
 #include "device.h"
 #include "swapchain.h"
 #include "pipeline.h"
+#include "sprite.h"
 
 // main program loop and high level manager
 class Engine {
@@ -34,7 +35,9 @@ private:
 	std::unique_ptr<Pipeline> pipeline;
 	VkPipelineLayout pipelineLayout;
 	std::vector<VkCommandBuffer> commandBuffers;
+	std::unique_ptr<Sprite> sprite;
 
+	void loadSprites();
 	void createPipelineLayout();
 	void createPipeline();
 	void createCommandBuffers();

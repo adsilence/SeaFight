@@ -8,6 +8,7 @@
 #include "utils.h"
 
 Engine::Engine() {
+	loadSprites();
 	createPipelineLayout();
 	createPipeline();
 	createCommandBuffers();
@@ -48,6 +49,14 @@ void Engine::start() {
 	}
 
 	vkDeviceWaitIdle(device.device());
+}
+
+void Engine::loadSprites() {
+	std::vector<Sprite::Vertex> vertices {
+      {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};	
+	sprite = std::make_unique<Sprite>(device, vertices);
 }
 
 void Engine::createPipelineLayout() {
@@ -117,7 +126,9 @@ void Engine::createCommandBuffers() {
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		pipeline->bind(commandBuffers[i]);
-		vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+		//vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+		sprite->bind(commandBuffers[i]);
+		sprite->draw(commandBuffers[i]);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {

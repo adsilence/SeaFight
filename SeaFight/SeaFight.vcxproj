@@ -159,6 +159,7 @@
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pipeline.cpp" />
+    <ClCompile Include="sprite.cpp" />
     <ClCompile Include="swapchain.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
@@ -171,6 +172,7 @@
     <ClInclude Include="device.h" />
     <ClInclude Include="engine.h" />
     <ClInclude Include="pipeline.h" />
+    <ClInclude Include="sprite.h" />
     <ClInclude Include="swapchain.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="window.h" />

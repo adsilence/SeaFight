@@ -93,7 +93,8 @@ VkResult Swapchain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_
 	vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
 	if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) !=
 		VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
+		spdlog::critical("Failed to submit draw command buffer!");
+		throw std::runtime_error("Failed to submit draw command buffer!");
 	}
 
 	VkPresentInfoKHR presentInfo = {};
@@ -162,7 +163,8 @@ void Swapchain::createSwapchain() {
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
 	if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create swap chain!");
+		spdlog::critical("Failed to create swap chain!");
+		throw std::runtime_error("Failed to create swap chain!");
 	}
 
 	// we only specified a minimum number of images in the swap chain, so the implementation is
@@ -193,7 +195,8 @@ void Swapchain::createImageViews() {
 
 		if (vkCreateImageView(device.device(), &viewInfo, nullptr, &swapchainImageViews[i]) !=
 			VK_SUCCESS) {
-			throw std::runtime_error("failed to create texture image view!");
+			spdlog::critical("Failed to create texture image view!");
+			throw std::runtime_error("Failed to create texture image view!");
 		}
 	}
 }
@@ -253,7 +256,8 @@ void Swapchain::createRenderPass() {
 	renderPassInfo.pDependencies = &dependency;
 
 	if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
+		spdlog::critical("Failed to create render pass!");
+		throw std::runtime_error("Failed to create render pass!");
 	}
 }
 
@@ -277,7 +281,8 @@ void Swapchain::createFramebuffers() {
 			&framebufferInfo,
 			nullptr,
 			&swapchainFramebuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create framebuffer!");
+			spdlog::critical("Failed to create framebuffer!");
+			throw std::runtime_error("Failed to create framebuffer!");
 		}
 	}
 }
@@ -325,7 +330,8 @@ void Swapchain::createDepthResources() {
 		viewInfo.subresourceRange.layerCount = 1;
 
 		if (vkCreateImageView(device.device(), &viewInfo, nullptr, &depthImageViews[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create texture image view!");
+			spdlog::critical("Failed to create texture image view!");
+			throw std::runtime_error("Failed to create texture image view!");
 		}
 	}
 }
@@ -349,7 +355,8 @@ void Swapchain::createSyncObjects() {
 			vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) !=
 			VK_SUCCESS ||
 			vkCreateFence(device.device(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create synchronization objects for a frame!");
+			spdlog::critical("Failed to create synchronization objects for a frame!");
+			throw std::runtime_error("Failed to create synchronization objects for a frame!");
 		}
 	}
 }
@@ -357,7 +364,7 @@ void Swapchain::createSyncObjects() {
 VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(
 	const std::vector<VkSurfaceFormatKHR>& availableFormats) {
 	for (const auto& availableFormat : availableFormats) {
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
 			availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
 			return availableFormat;
 		}
