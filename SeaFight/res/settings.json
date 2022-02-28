@@ -1,5 +1,5 @@
 {
   "dev_mode": true,
-  "res_x": 600,
-  "res_y":  400
+  "window_width": 800,
+  "window_height":  600
 }

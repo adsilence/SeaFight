@@ -4,6 +4,9 @@
 #include "engine.h"
 #include <spdlog/spdlog.h>
 
+
+// entry for program start
+// probably should put some sort of legal nonsense here
 int main() {
 
     Engine engine{};

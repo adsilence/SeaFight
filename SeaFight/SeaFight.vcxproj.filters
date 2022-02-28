@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\gfx">
+      <UniqueIdentifier>{dcb7b03c-bec8-41ee-b60d-49e3426cf809}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gfx">
+      <UniqueIdentifier>{de5a9ea0-3641-41b9-87b9-3def927bd181}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -21,12 +27,27 @@
     <ClCompile Include="engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="device.cpp">
+      <Filter>Source Files\gfx</Filter>
+    </ClCompile>
     <ClCompile Include="window.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\gfx</Filter>
+    </ClCompile>
+    <ClCompile Include="pipeline.cpp">
+      <Filter>Source Files\gfx</Filter>
+    </ClCompile>
+    <ClCompile Include="swapchain.cpp">
+      <Filter>Source Files\gfx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\settings.json">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\shaders\sprite.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\shaders\sprite.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
@@ -34,8 +55,20 @@
     <ClInclude Include="engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="window.h">
+    <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="device.h">
+      <Filter>Header Files\gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="pipeline.h">
+      <Filter>Header Files\gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="window.h">
+      <Filter>Header Files\gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="swapchain.h">
+      <Filter>Header Files\gfx</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

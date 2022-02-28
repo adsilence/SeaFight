@@ -5,6 +5,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+// Window class to handle the actual window object
 class Window {
 public:
 	Window(int width, int height, std::string name);

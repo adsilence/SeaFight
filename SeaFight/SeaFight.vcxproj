@@ -155,15 +155,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="device.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="pipeline.cpp" />
+    <ClCompile Include="swapchain.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\settings.json" />
+    <None Include="res\shaders\sprite.frag" />
+    <None Include="res\shaders\sprite.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="device.h" />
     <ClInclude Include="engine.h" />
+    <ClInclude Include="pipeline.h" />
+    <ClInclude Include="swapchain.h" />
+    <ClInclude Include="utils.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
