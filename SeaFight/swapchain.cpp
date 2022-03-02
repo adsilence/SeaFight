@@ -10,6 +10,16 @@
 
 Swapchain::Swapchain(Device& deviceRef, VkExtent2D extent)
 	: device{ deviceRef }, windowExtent{ extent } {
+	init();
+}
+
+Swapchain::Swapchain(Device& deviceRef, VkExtent2D extent, std::shared_ptr<Swapchain> prev)
+	: device{ deviceRef }, windowExtent{ extent }, oldSwapchain{ prev } {
+	init();
+	oldSwapchain = nullptr;
+}
+
+void Swapchain::init() {
 	createSwapchain();
 	createImageViews();
 	createRenderPass();
@@ -160,7 +170,7 @@ void Swapchain::createSwapchain() {
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
 
-	createInfo.oldSwapchain = VK_NULL_HANDLE;
+	createInfo.oldSwapchain = oldSwapchain == nullptr ? VK_NULL_HANDLE : oldSwapchain->swapchain;
 
 	if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
 		spdlog::critical("Failed to create swap chain!");

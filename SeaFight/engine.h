@@ -31,7 +31,7 @@ private:
 	Settings settings{};
 	Window window{Settings::settings["window_width"], Settings::settings["window_height"], "Sea Fight"};
 	Device device{ window };
-	Swapchain swapchain{ device, window.getExtent() };
+	std::unique_ptr<Swapchain> swapchain;
 	std::unique_ptr<Pipeline> pipeline;
 	VkPipelineLayout pipelineLayout;
 	std::vector<VkCommandBuffer> commandBuffers;
@@ -41,5 +41,8 @@ private:
 	void createPipelineLayout();
 	void createPipeline();
 	void createCommandBuffers();
+	void freeCommandBuffers();
+	void recreateSwapChain();
+	void recordCommandBuffer(int imageIndex);
 };
 

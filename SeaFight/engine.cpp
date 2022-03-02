@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <cassert>
+
 #include <json.hpp> 
 #include <spdlog/spdlog.h>
 
@@ -10,7 +12,7 @@
 Engine::Engine() {
 	loadSprites();
 	createPipelineLayout();
-	createPipeline();
+	recreateSwapChain();
 	createCommandBuffers();
 }
 
@@ -72,13 +74,33 @@ void Engine::createPipelineLayout() {
 	}
 }
 
+void Engine::recreateSwapChain() {
+auto extent = window.getExtent();
+  while (extent.width == 0 || extent.height == 0) {
+    extent = window.getExtent();
+    glfwWaitEvents();
+  }
+  vkDeviceWaitIdle(device.device());
+
+  if (swapchain == nullptr) {
+    swapchain = std::make_unique<Swapchain>(device, extent);
+  } else {
+    swapchain = std::make_unique<Swapchain>(device, extent, std::move(swapchain));
+    if (swapchain->imageCount() != commandBuffers.size()) {
+      freeCommandBuffers();
+      createCommandBuffers();
+    }
+  }
+
+  createPipeline();
+}
+
 void Engine::createPipeline() {
+  assert(swapchain != nullptr && "Cannot create pipeline before swap chain");
+  assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
 	PipelineConfigInfo pipelineConfig{};
-	Pipeline::defaultPipelineConfigInfo(
-		pipelineConfig,
-		swapchain.width(),
-		swapchain.height());
-	pipelineConfig.renderPass = swapchain.getRenderPass();
+	Pipeline::defaultPipelineConfigInfo(pipelineConfig);
+	pipelineConfig.renderPass = swapchain->getRenderPass();
 	pipelineConfig.pipelineLayout = pipelineLayout;
 	pipeline = std::make_unique<Pipeline>(
 		device,
@@ -88,7 +110,7 @@ void Engine::createPipeline() {
 }
 
 void Engine::createCommandBuffers() {
-	commandBuffers.resize(swapchain.imageCount());
+	commandBuffers.resize(swapchain->imageCount());
 
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -100,22 +122,34 @@ void Engine::createCommandBuffers() {
 		VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
+}
 
-	for (int i = 0; i < commandBuffers.size(); i++) {
+void Engine::freeCommandBuffers() {
+	  vkFreeCommandBuffers(
+      device.device(),
+      device.getCommandPool(),
+      static_cast<uint32_t>(commandBuffers.size()),
+      commandBuffers.data());
+  commandBuffers.clear();
+}
+
+void Engine::recordCommandBuffer(int imageIndex) {
+	
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-		if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-			throw std::runtime_error("failed to begin recording command buffer!");
+		if (vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo) != VK_SUCCESS) {
+			spdlog::critical("Failed to begin recording command buffer!");
+			throw std::runtime_error("Failed to begin recording command buffer!");
 		}
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = swapchain.getRenderPass();
-		renderPassInfo.framebuffer = swapchain.getFrameBuffer(i);
+		renderPassInfo.renderPass = swapchain->getRenderPass();
+		renderPassInfo.framebuffer = swapchain->getFrameBuffer(imageIndex);
 
 		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = swapchain.getSwapChainExtent();
+		renderPassInfo.renderArea.extent = swapchain->getSwapChainExtent();
 
 		std::array<VkClearValue, 2> clearValues{};
 		clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
@@ -123,35 +157,59 @@ void Engine::createCommandBuffers() {
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
 
-		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		pipeline->bind(commandBuffers[i]);
-		//vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
-		sprite->bind(commandBuffers[i]);
-		sprite->draw(commandBuffers[i]);
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(swapchain->getSwapChainExtent().width);
+	viewport.height = static_cast<float>(swapchain->getSwapChainExtent().height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	VkRect2D scissor{{0, 0}, swapchain->getSwapChainExtent()};
+	vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+	vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
 
-		vkCmdEndRenderPass(commandBuffers[i]);
-		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+		pipeline->bind(commandBuffers[imageIndex]);
+		sprite->bind(commandBuffers[imageIndex]);
+		sprite->draw(commandBuffers[imageIndex]);
+	
+		vkCmdEndRenderPass(commandBuffers[imageIndex]);
+		if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to record command buffer!");
 		}
 	}
-}
+
 
 void Engine::update() {
 	glfwPollEvents();
 }
 
 void Engine::render() {
-	uint32_t imageIndex;
-	auto result = swapchain.acquireNextImage(&imageIndex);
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-		throw std::runtime_error("failed to acquire swap chain image!");
-	}
+  uint32_t imageIndex;
+  auto result = swapchain->acquireNextImage(&imageIndex);
 
-	result = swapchain.submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
-	if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
-	}
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    recreateSwapChain();
+    return;
+  }
+
+  if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    spdlog::critical("Failed to acquire swap chain image!");
+    throw std::runtime_error("Failed to acquire swap chain image!");
+  }
+
+  recordCommandBuffer(imageIndex);
+  result = swapchain->submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
+      window.windowResized()) {
+    window.resetWindowResizedFlag();
+    recreateSwapChain();
+    return;
+  } else if (result != VK_SUCCESS) {
+    spdlog::critical("Failed to present swap chain image!");
+    throw std::runtime_error("Failed to present swap chain image!");
+  }
 }
 
 void Engine::stop() {
