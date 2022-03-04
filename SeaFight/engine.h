@@ -7,9 +7,9 @@
 #include "utils.h"
 #include "window.h"
 #include "device.h"
-#include "swapchain.h"
-#include "pipeline.h"
-#include "sprite.h"
+#include "gameobject.h"
+#include "renderer.h"
+#include "renderManager.h"
 
 // main program loop and high level manager
 class Engine {
@@ -31,18 +31,10 @@ private:
 	Settings settings{};
 	Window window{Settings::settings["window_width"], Settings::settings["window_height"], "Sea Fight"};
 	Device device{ window };
-	std::unique_ptr<Swapchain> swapchain;
-	std::unique_ptr<Pipeline> pipeline;
-	VkPipelineLayout pipelineLayout;
-	std::vector<VkCommandBuffer> commandBuffers;
-	std::unique_ptr<Sprite> sprite;
+	std::vector<GameObject> gameObjects;
+	Renderer renderer{ window, device };
+	RenderManager renderManager{ device, renderer.getSwapChainRenderPass() };
 
-	void loadSprites();
-	void createPipelineLayout();
-	void createPipeline();
-	void createCommandBuffers();
-	void freeCommandBuffers();
-	void recreateSwapChain();
-	void recordCommandBuffer(int imageIndex);
+	void loadGameObjects();
 };
 

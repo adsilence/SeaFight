@@ -32,6 +32,10 @@ public:
 	float extentAspectRatio() {
 		return static_cast<float>(swapchainExtent.width) / static_cast<float>(swapchainExtent.height);
 	}
+	bool compareSwapFormats(const Swapchain& swapchain) const {
+		return swapchain.swapchainDepthFormat == swapchainDepthFormat &&
+			swapchain.swapchainImageFormat == swapchainImageFormat;
+	}
 	VkFormat findDepthFormat();
 
 	VkResult acquireNextImage(uint32_t* imageIndex);
@@ -39,6 +43,7 @@ public:
 
 private:
 	VkFormat swapchainImageFormat;
+	VkFormat swapchainDepthFormat;
 	VkExtent2D swapchainExtent;
 
 	std::vector<VkFramebuffer> swapchainFramebuffers;
