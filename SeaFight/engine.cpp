@@ -12,10 +12,25 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
-#include "utils.h"
 
+struct SpriteUBO {
+	glm::mat4 proj;
+	glm::mat4 view;
+	glm::mat4 model;
+};
 
 Engine::Engine() {
+	uboBuffers.resize(Swapchain::MAX_FRAMES_IN_FLIGHT);
+	for (int i = 0; i < uboBuffers.size(); i++) {
+		uboBuffers[i] = std::make_unique<Buffer>(
+			device,
+			sizeof(SpriteUBO),
+			1,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+		);
+		uboBuffers[i]->map();
+	}
 	loadGameObjects();
 }
 
@@ -75,11 +90,20 @@ void Engine::loadGameObjects() {
 void Engine::update() {
 	glfwPollEvents();
 
+
 	gameObjects[0].transform2d.rotation = sin(glfwGetTime());
 }
 
 void Engine::render() {
 	if (auto commandBuffer = renderer.beginFrame()) {
+		//update ubos
+		SpriteUBO ubo{};
+		//ubo.proj = 
+		int frameIndex = renderer.getFrameIndex();
+		uboBuffers[frameIndex]->writeToBuffer(&ubo);
+		uboBuffers[frameIndex]->flush();
+
+		//render frame
       renderer.beginSwapchainRenderPass(commandBuffer);
       renderManager.renderGameObjects(commandBuffer, gameObjects);
       renderer.endSwapchainRenderPass(commandBuffer);

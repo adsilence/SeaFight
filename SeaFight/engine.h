@@ -10,6 +10,7 @@
 #include "gameobject.h"
 #include "renderer.h"
 #include "renderManager.h"
+#include "buffer.h"
 
 // main program loop and high level manager
 class Engine {
@@ -34,6 +35,8 @@ private:
 	std::vector<GameObject> gameObjects;
 	Renderer renderer{ window, device };
 	RenderManager renderManager{ device, renderer.getSwapChainRenderPass() };
+
+	std::vector<std::unique_ptr<Buffer>> uboBuffers;
 
 	void loadGameObjects();
 };

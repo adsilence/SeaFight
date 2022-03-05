@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "device.h"
+#include "buffer.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -31,7 +32,6 @@ private:
 	void createVertexBuffers(const std::vector<Vertex>& vertices);
 
 	Device& device;
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
+	std::unique_ptr<Buffer> vertexBuffer;
 	uint32_t vertexCount;
 };

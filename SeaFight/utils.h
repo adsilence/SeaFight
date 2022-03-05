@@ -6,6 +6,8 @@
 #include <json.hpp>
 #include <spdlog/spdlog.h>
 
+#include <vulkan/vulkan.h>
+
 using json = nlohmann::json;
 
 // namespace to manage the game settings 
@@ -33,3 +35,4 @@ public:
 	}
 
 };
+

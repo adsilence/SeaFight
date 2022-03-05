@@ -7,26 +7,32 @@ Sprite::Sprite(Device& device, const std::vector<Vertex>& vertices) : device{ de
 	createVertexBuffers(vertices);
 }
 
-Sprite::~Sprite() {
-	vkDestroyBuffer(device.device(), vertexBuffer, nullptr);
-	vkFreeMemory(device.device(), vertexBufferMemory, nullptr);
-}
+Sprite::~Sprite() {}
 
 void Sprite::createVertexBuffers(const std::vector<Vertex>& vertices) {
 	vertexCount = static_cast<uint32_t>(vertices.size());
 	assert(vertexCount >= 3 && "Vertex count must be at least 3");
 	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
-	device.createBuffer(
-		bufferSize,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		vertexBuffer,
-		vertexBufferMemory);
+	uint32_t vertexSize = sizeof(vertices[0]);
+	Buffer stagingBuffer{
+		device,
+		vertexSize,
+		vertexCount,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	};
 
-	void* data;
-	vkMapMemory(device.device(), vertexBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-	vkUnmapMemory(device.device(), vertexBufferMemory);
+	stagingBuffer.map();
+	stagingBuffer.writeToBuffer((void*)vertices.data());
+
+	vertexBuffer = std::make_unique<Buffer>(
+		device,
+		vertexSize,
+		vertexCount,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	);
+	device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
 }
 
 void Sprite::draw(VkCommandBuffer commandBuffer) {
@@ -34,7 +40,7 @@ void Sprite::draw(VkCommandBuffer commandBuffer) {
 }
 
 void Sprite::bind(VkCommandBuffer commandBuffer) {
-	VkBuffer buffers[] = { vertexBuffer };
+	VkBuffer buffers[] = { vertexBuffer->getBuffer() };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 }
