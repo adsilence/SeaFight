@@ -83,11 +83,20 @@ void Engine::start() {
 }
 
 void Engine::loadGameObjects() {
-	std::vector<Sprite::Vertex> vertices{
+	/*std::vector<Sprite::Vertex> vertices{
 	  {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
 	  {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	  {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}} };
-	auto sprite = std::make_shared<Sprite>(device, vertices);
+	  {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}} };*/
+	const std::vector<Sprite::Vertex> vertices = {
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+	const std::vector<uint32_t> indices = {
+		0, 1, 2, 2, 3, 0
+	};
+	auto sprite = std::make_shared<Sprite>(device, vertices, indices);
 
 	auto triangle = GameObject::createGameObject();
 	triangle.sprite = sprite;
@@ -126,8 +135,8 @@ void Engine::render() {
 		SpriteUBO ubo{};
 		//ubo.proj = glm::ortho(0.0f, 800.0f, 600.0f, 0.0f, -1.0f, 1.0f);
 		ubo.proj = glm::mat4(1.0f);
-		//ubo.view = view;
-		ubo.view = glm::mat4(1.0f);
+		ubo.view = view;
+		//ubo.view = glm::mat4(1.0f);
 		int frameIndex = renderer.getFrameIndex();
 		uboBuffers[frameIndex]->writeToBuffer(&ubo);
 		uboBuffers[frameIndex]->flush();

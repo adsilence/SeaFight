@@ -19,7 +19,7 @@ public:
 		static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 	};
 
-	Sprite(Device& device, const std::vector<Vertex>& vertices);
+	Sprite(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 	~Sprite();
 
 	Sprite(const Sprite&) = delete;
@@ -29,9 +29,13 @@ public:
 	void draw(VkCommandBuffer commandBuffer);
 
 private:
-	void createVertexBuffers(const std::vector<Vertex>& vertices);
-
 	Device& device;
+
 	std::unique_ptr<Buffer> vertexBuffer;
 	uint32_t vertexCount;
+	std::unique_ptr<Buffer> indexBuffer;
+	uint32_t indexCount;
+
+	void createVertexBuffers(const std::vector<Vertex>& vertices);
+	void createIndexBuffers(const std::vector<uint32_t>& indices);
 };
