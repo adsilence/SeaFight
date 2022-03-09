@@ -11,12 +11,14 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
+#include "inputManager.h"
 
 struct SpriteUBO {
 	glm::mat4 proj;
 	glm::mat4 view;
-	glm::mat4 model;
 };
 
 Engine::Engine() {
@@ -28,9 +30,20 @@ Engine::Engine() {
 			1,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-		);
+			);
 		uboBuffers[i]->map();
 	}
+
+	spritePool = DescriptorPool::Builder(device).setMaxSets(Swapchain::MAX_FRAMES_IN_FLIGHT).addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Swapchain::MAX_FRAMES_IN_FLIGHT).build();
+
+	auto setLayout = DescriptorSetLayout::Builder(device).addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).build();
+	descriptorSets.resize(Swapchain::MAX_FRAMES_IN_FLIGHT);
+	for (int i = 0; i < descriptorSets.size(); i++) {
+		auto bufferInfo = uboBuffers[i]->descriptorInfo();
+		DescriptorWriter(*setLayout, *spritePool).writeBuffer(0, &bufferInfo).build(descriptorSets[i]);
+	}
+	renderManager = std::make_unique<RenderManager>(device, renderer.getSwapChainRenderPass(), setLayout->getDescriptorSetLayout());
+
 	loadGameObjects();
 }
 
@@ -91,21 +104,37 @@ void Engine::update() {
 	glfwPollEvents();
 
 
-	gameObjects[0].transform2d.rotation = sin(glfwGetTime());
+	//temp translations
+	gameObjects[0].transform2d.rotation = 90 * sin(glfwGetTime());
+	if (InputManager::keys[GLFW_KEY_W]) {
+		view = glm::translate(view, glm::vec3(0, 0.1f, 0));
+	}
+	if (InputManager::keys[GLFW_KEY_S]) {
+		view = glm::translate(view, glm::vec3(0, -0.1f, 0));
+	}
+	if (InputManager::keys[GLFW_KEY_A]) {
+		view = glm::translate(view, glm::vec3(0.1f, 0, 0));
+	}
+	if (InputManager::keys[GLFW_KEY_D]) {
+		view = glm::translate(view, glm::vec3(-0.1f, 0, 0));
+	}
 }
 
 void Engine::render() {
 	if (auto commandBuffer = renderer.beginFrame()) {
 		//update ubos
 		SpriteUBO ubo{};
-		//ubo.proj = 
+		//ubo.proj = glm::ortho(0.0f, 800.0f, 600.0f, 0.0f, -1.0f, 1.0f);
+		ubo.proj = glm::mat4(1.0f);
+		//ubo.view = view;
+		ubo.view = glm::mat4(1.0f);
 		int frameIndex = renderer.getFrameIndex();
 		uboBuffers[frameIndex]->writeToBuffer(&ubo);
 		uboBuffers[frameIndex]->flush();
 
 		//render frame
       renderer.beginSwapchainRenderPass(commandBuffer);
-      renderManager.renderGameObjects(commandBuffer, gameObjects);
+      renderManager->renderGameObjects(commandBuffer, descriptorSets[frameIndex], gameObjects);
       renderer.endSwapchainRenderPass(commandBuffer);
       renderer.endFrame();
     }}

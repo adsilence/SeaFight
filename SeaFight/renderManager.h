@@ -10,13 +10,13 @@
 
 class RenderManager {
 public:
-	RenderManager(Device& device, VkRenderPass renderPass);
+	RenderManager(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout setLayout);
 	~RenderManager();
 
 	RenderManager(const RenderManager&) = delete;
 	RenderManager& operator=(const RenderManager&) = delete;
 
-	void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<GameObject>& gameObjects);
+	void renderGameObjects(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, std::vector<GameObject>& gameObjects);
 
 private:
 	Device& device;
@@ -24,6 +24,6 @@ private:
 	std::unique_ptr<Pipeline> pipeline;
 	VkPipelineLayout pipelineLayout;
 
-	void createPipelineLayout();
+	void createPipelineLayout(VkDescriptorSetLayout setLayout);
 	void createPipeline(VkRenderPass renderPass);
 };

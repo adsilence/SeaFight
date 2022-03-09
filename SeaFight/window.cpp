@@ -4,6 +4,8 @@
 
 #include "spdlog/spdlog.h"
 
+#include "inputManager.h"
+
 Window::Window(int width, int height, std::string name) :
 	width{ width }, height{ height }, name{ name } {
 	initWindow();
@@ -22,6 +24,7 @@ void Window::initWindow() {
 	window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
 	glfwSetWindowUserPointer(window, this);
 	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+	glfwSetKeyCallback(window, InputManager::key_callback);
 }
 
 bool Window::shouldClose() {

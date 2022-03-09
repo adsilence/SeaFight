@@ -4,20 +4,22 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <array>
 #include <cassert>
 #include <stdexcept>
 
 struct PushConstantData {
-	glm::mat2 transform{ 1.f };
-	glm::vec2 offset;
+	glm::mat4 transform;
 	alignas(16) glm::vec3 color;
 };
 
-RenderManager::RenderManager(Device& device, VkRenderPass renderPass)
+RenderManager::RenderManager(Device& device, 
+	VkRenderPass renderPass,
+	VkDescriptorSetLayout setLayout)
 	: device{ device } {
-	createPipelineLayout();
+	createPipelineLayout(setLayout);
 	createPipeline(renderPass);
 }
 
@@ -25,16 +27,19 @@ RenderManager::~RenderManager() {
 	vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
 }
 
-void RenderManager::createPipelineLayout() {
+
+void RenderManager::createPipelineLayout(VkDescriptorSetLayout setLayout) {
 	VkPushConstantRange pushConstantRange{};
 	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushConstantRange.offset = 0;
 	pushConstantRange.size = sizeof(PushConstantData);
 
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts{ setLayout };
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 1;
 	pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 	if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) !=
@@ -59,14 +64,26 @@ void RenderManager::createPipeline(VkRenderPass renderPass) {
 }
 
 void RenderManager::renderGameObjects(
-	VkCommandBuffer commandBuffer, std::vector<GameObject>& gameObjects) {
+	VkCommandBuffer commandBuffer, 
+	VkDescriptorSet descriptorSet,
+	std::vector<GameObject>& gameObjects) {
 	pipeline->bind(commandBuffer);
+
+	vkCmdBindDescriptorSets(
+		commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		pipelineLayout,
+		0,
+		1,
+		&descriptorSet,
+		0,
+		nullptr
+	);
 
 	for (auto& obj : gameObjects) {
 		PushConstantData push{};
-		push.offset = obj.transform2d.translation;
 		push.color = obj.color;
-		push.transform = obj.transform2d.mat2();
+		push.transform = obj.transform2d.mat4();
 
 		vkCmdPushConstants(
 			commandBuffer,
