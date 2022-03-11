@@ -10,7 +10,7 @@
 
 class RenderManager {
 public:
-	RenderManager(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout setLayout);
+	RenderManager(Device& device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> setLayouts);
 	~RenderManager();
 
 	RenderManager(const RenderManager&) = delete;
@@ -24,6 +24,6 @@ private:
 	std::unique_ptr<Pipeline> pipeline;
 	VkPipelineLayout pipelineLayout;
 
-	void createPipelineLayout(VkDescriptorSetLayout setLayout);
+	void createPipelineLayout(std::vector<VkDescriptorSetLayout> setLayouts);
 	void createPipeline(VkRenderPass renderPass);
 };

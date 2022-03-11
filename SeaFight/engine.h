@@ -12,6 +12,7 @@
 #include "renderManager.h"
 #include "buffer.h"
 #include "descriptors.h"
+#include "texture.h"
 
 //temp
 #define GLM_FORCE_RADIANS
@@ -48,9 +49,11 @@ private:
 	std::vector<std::unique_ptr<Buffer>> uboBuffers;
 	std::unique_ptr<DescriptorPool> spritePool;
 	std::vector<VkDescriptorSet> descriptorSets;
+	VkSampler textureSampler;
 
 	//temp
 	glm::mat4 view = glm::mat4(1.0f);
+	Texture texture{ device, "res/sprites/syl.png" };
 
 	void loadGameObjects();
 };

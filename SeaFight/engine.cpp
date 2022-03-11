@@ -34,20 +34,63 @@ Engine::Engine() {
 		uboBuffers[i]->map();
 	}
 
-	spritePool = DescriptorPool::Builder(device).setMaxSets(Swapchain::MAX_FRAMES_IN_FLIGHT).addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Swapchain::MAX_FRAMES_IN_FLIGHT).build();
+	spritePool = DescriptorPool::Builder(device)
+		.setMaxSets(Swapchain::MAX_FRAMES_IN_FLIGHT)
+		.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Swapchain::MAX_FRAMES_IN_FLIGHT)
+		.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Swapchain::MAX_FRAMES_IN_FLIGHT)
+		.build();
 
-	auto setLayout = DescriptorSetLayout::Builder(device).addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).build();
+	auto setLayout = DescriptorSetLayout::Builder(device)
+		.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build();
+
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+	//samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.maxAnisotropy = 1;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+	if (vkCreateSampler(device.device(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+		spdlog::critical("Failed to create texture sampler!");
+		throw std::runtime_error("Failed to create texture sampler!");
+	}
+
 	descriptorSets.resize(Swapchain::MAX_FRAMES_IN_FLIGHT);
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = texture.getImageView();
+	imageInfo.sampler = textureSampler;
 	for (int i = 0; i < descriptorSets.size(); i++) {
 		auto bufferInfo = uboBuffers[i]->descriptorInfo();
-		DescriptorWriter(*setLayout, *spritePool).writeBuffer(0, &bufferInfo).build(descriptorSets[i]);
+		DescriptorWriter(*setLayout, *spritePool)
+			.writeBuffer(0, &bufferInfo)
+			.writeImage(1, &imageInfo)
+			.build(descriptorSets[i]);
 	}
-	renderManager = std::make_unique<RenderManager>(device, renderer.getSwapChainRenderPass(), setLayout->getDescriptorSetLayout());
+
+
+	std::vector<VkDescriptorSetLayout> setLayouts = { setLayout->getDescriptorSetLayout() };
+	renderManager = std::make_unique<RenderManager>(device, renderer.getSwapChainRenderPass(), setLayouts);
 
 	loadGameObjects();
 }
 
-Engine::~Engine() {}
+Engine::~Engine() {
+	vkDestroySampler(device.device(), textureSampler, nullptr);
+}
 
 void Engine::start() {
 	double lastTime = glfwGetTime(), timer = lastTime;
@@ -83,15 +126,11 @@ void Engine::start() {
 }
 
 void Engine::loadGameObjects() {
-	/*std::vector<Sprite::Vertex> vertices{
-	  {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	  {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	  {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}} };*/
 	const std::vector<Sprite::Vertex> vertices = {
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 	const std::vector<uint32_t> indices = {
 		0, 1, 2, 2, 3, 0
@@ -102,7 +141,7 @@ void Engine::loadGameObjects() {
 	triangle.sprite = sprite;
 	triangle.color = { .1f, .1f, .8f };
 	triangle.transform2d.translation.x = .2f;
-	triangle.transform2d.scale = { 2.f, .5f };
+	triangle.transform2d.scale = { 1.f, 1.f };
 	triangle.transform2d.rotation = 1;
 
 	gameObjects.push_back(std::move(triangle));

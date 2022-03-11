@@ -5,6 +5,9 @@
 #include <spdlog/spdlog.h>
 
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 // entry for program start
 // probably should put some sort of legal nonsense here
 int main() {
